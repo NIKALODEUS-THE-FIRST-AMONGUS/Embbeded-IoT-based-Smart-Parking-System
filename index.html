@@ -1,0 +1,75 @@
+const char index_html[] PROGMEM = R"rawliteral(
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>IoT Smart Parking System</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
+    body { font-family: 'Inter', sans-serif; background-color: #0d1117; color: white; }
+    .glow-green { text-shadow: 0 0 5px #4ade80, 0 0 10px #4ade80; }
+    .glow-red { text-shadow: 0 0 5px #f87171, 0 0 10px #f87171; }
+    .glow-lime { text-shadow: 0 0 5px #a3e635, 0 0 10px #a3e635; }
+    .border-glow-green { box-shadow: 0 0 10px #a3e635; border-color: #a3e635; }
+    .border-glow-red { box-shadow: 0 0 10px #f87171; border-color: #f87171; }
+    .card-bg { background-color: #161b22; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-center p-4">
+  <div class="text-center mb-8">
+    <h1 class="text-4xl font-extrabold text-teal-400 mb-2">IoT Smart Parking System</h1>
+    <p class="text-gray-400">4 Slots + Ultrasonic Entry Gate</p>
+  </div>
+  
+  <div class="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+    <div class="card-bg border border-gray-700 rounded-3xl p-6 shadow-2xl">
+      <h2 class="text-xl font-semibold text-gray-200">Available</h2>
+      <p id="available" class="text-6xl font-bold text-green-400 glow-green">0</p>
+    </div>
+    <div class="card-bg border border-gray-700 rounded-3xl p-6 shadow-2xl">
+      <h2 class="text-xl font-semibold text-gray-200">Occupied</h2>
+      <p id="occupied" class="text-6xl font-bold text-red-400 glow-red">0</p>
+    </div>
+    <div class="card-bg border border-gray-700 rounded-3xl p-6 shadow-2xl">
+      <h2 class="text-xl font-semibold text-gray-200">Gate</h2>
+      <p id="gate" class="text-5xl font-bold text-red-400 glow-red transition-all">Closed</p>
+    </div>
+  </div>
+
+  <div class="w-full max-w-5xl card-bg border border-gray-700 rounded-3xl p-8 shadow-2xl">
+    <div id="slots" class="grid grid-cols-2 md:grid-cols-4 gap-6"></div>
+  </div>
+
+  <script>
+    async function updateData() {
+      try {
+        const res = await fetch('/data');
+        const data = await res.json();
+        document.getElementById("available").innerText = data.available;
+        document.getElementById("occupied").innerText = data.occupied;
+        
+        const gate = document.getElementById("gate");
+        gate.innerText = data.gate;
+        const isOpen = data.gate.includes("Open");
+        gate.className = `text-5xl font-bold transition-all ${isOpen ? 'text-lime-400 glow-lime' : 'text-red-400 glow-red'}`;
+
+        let html = "";
+        for (let i = 1; i <= 4; i++) {
+          const occ = data.occupied_slots.includes(i);
+          html += `
+            <div class="p-6 rounded-xl border-4 flex flex-col items-center justify-center h-32 ${occ ? 'bg-red-900 border-glow-red' : 'bg-green-900 border-glow-green'}">
+              <div class="text-xl font-bold">Slot ${i}</div>
+              <div class="font-semibold">${occ ? 'Occupied' : 'Free'}</div>
+            </div>`;
+        }
+        document.getElementById("slots").innerHTML = html;
+      } catch(e) { console.error("Fetch error:", e); }
+    }
+    setInterval(updateData, 1000);
+    updateData();
+  </script>
+</body>
+</html>
+)rawliteral";
