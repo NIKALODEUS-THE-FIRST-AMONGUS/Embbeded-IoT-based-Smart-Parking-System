@@ -9,32 +9,38 @@ const char index_html[] PROGMEM = R"rawliteral(
   <style>
     @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&display=swap');
     body { font-family: 'Inter', sans-serif; background-color: #0d1117; color: white; }
-    .glow-green { text-shadow: 0 0 5px #4ade80, 0 0 10px #4ade80; }
-    .glow-red { text-shadow: 0 0 5px #f87171, 0 0 10px #f87171; }
-    .glow-lime { text-shadow: 0 0 5px #a3e635, 0 0 10px #a3e635; }
-    .border-glow-green { box-shadow: 0 0 10px #a3e635; border-color: #a3e635; }
-    .border-glow-red { box-shadow: 0 0 10px #f87171; border-color: #f87171; }
+    .glow-green { text-shadow: 0 0 10px #4ade80; }
+    .glow-red { text-shadow: 0 0 10px #f87171; }
+    .border-glow-green { box-shadow: 0 0 15px rgba(74, 222, 128, 0.3); border-color: #4ade80; }
+    .border-glow-red { box-shadow: 0 0 15px rgba(248, 113, 113, 0.3); border-color: #f87171; }
     .card-bg { background-color: #161b22; }
+    .btn-manual { transition: all 0.2s; border: 1px solid #374151; }
+    .btn-manual:active { transform: scale(0.95); background-color: #1f2937; }
   </style>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-center p-4">
-  <div class="text-center mb-8">
+  <div class="text-center mb-6">
     <h1 class="text-4xl font-extrabold text-teal-400 mb-2">IoT Smart Parking System</h1>
-    <p class="text-gray-400">4 Slots + Ultrasonic Entry Gate</p>
+    <p class="text-gray-400 italic">System Override Enabled</p>
   </div>
-  
-  <div class="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+
+  <div class="w-full max-w-5xl grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
     <div class="card-bg border border-gray-700 rounded-3xl p-6 shadow-2xl">
-      <h2 class="text-xl font-semibold text-gray-200">Available</h2>
+      <h2 class="text-xl font-semibold text-gray-400">Available</h2>
       <p id="available" class="text-6xl font-bold text-green-400 glow-green">0</p>
     </div>
     <div class="card-bg border border-gray-700 rounded-3xl p-6 shadow-2xl">
-      <h2 class="text-xl font-semibold text-gray-200">Occupied</h2>
+      <h2 class="text-xl font-semibold text-gray-400">Occupied</h2>
       <p id="occupied" class="text-6xl font-bold text-red-400 glow-red">0</p>
     </div>
-    <div class="card-bg border border-gray-700 rounded-3xl p-6 shadow-2xl">
-      <h2 class="text-xl font-semibold text-gray-200">Gate</h2>
-      <p id="gate" class="text-5xl font-bold text-red-400 glow-red transition-all">Closed</p>
+    <div class="card-bg border border-gray-700 rounded-3xl p-6 shadow-2xl flex flex-col justify-between">
+      <div>
+        <h2 class="text-xl font-semibold text-gray-400">Gate</h2>
+        <p id="gate" class="text-4xl font-bold text-red-400 transition-all">Closed</p>
+      </div>
+      <button onclick="toggleGate()" class="btn-manual mt-4 bg-gray-800 hover:bg-gray-700 text-teal-400 font-bold py-2 px-4 rounded-xl text-sm uppercase tracking-wider">
+        Manual Toggle
+      </button>
     </div>
   </div>
 
@@ -43,6 +49,10 @@ const char index_html[] PROGMEM = R"rawliteral(
   </div>
 
   <script>
+    function toggleGate() {
+      fetch('/toggleGate');
+    }
+
     async function updateData() {
       try {
         const res = await fetch('/data');
@@ -53,19 +63,19 @@ const char index_html[] PROGMEM = R"rawliteral(
         const gate = document.getElementById("gate");
         gate.innerText = data.gate;
         const isOpen = data.gate.includes("Open");
-        gate.className = `text-5xl font-bold transition-all ${isOpen ? 'text-lime-400 glow-lime' : 'text-red-400 glow-red'}`;
+        gate.className = `text-4xl font-bold ${isOpen ? 'text-green-400 glow-green' : 'text-red-400 glow-red'}`;
 
         let html = "";
         for (let i = 1; i <= 4; i++) {
           const occ = data.occupied_slots.includes(i);
           html += `
-            <div class="p-6 rounded-xl border-4 flex flex-col items-center justify-center h-32 ${occ ? 'bg-red-900 border-glow-red' : 'bg-green-900 border-glow-green'}">
+            <div class="p-6 rounded-xl border-4 flex flex-col items-center justify-center h-32 ${occ ? 'bg-red-950/40 border-glow-red' : 'bg-green-950/40 border-glow-green'}">
               <div class="text-xl font-bold">Slot ${i}</div>
-              <div class="font-semibold">${occ ? 'Occupied' : 'Free'}</div>
+              <div class="text-xs opacity-70">${occ ? 'OCCUPIED' : 'FREE'}</div>
             </div>`;
         }
         document.getElementById("slots").innerHTML = html;
-      } catch(e) { console.error("Fetch error:", e); }
+      } catch(e) { console.error("Update error"); }
     }
     setInterval(updateData, 1000);
     updateData();
